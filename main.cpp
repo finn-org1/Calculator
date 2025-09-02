@@ -19,15 +19,15 @@ double evaluate(const std::string& expr) {
             ss.putback(ch);
             ss >> num;
             numbers.push(num);
-        } else if (ch == '+' || ch == '-' || ch == '*' || ch == '/') {
-            while (!ops.empty() && ((ops.top() == '*' || ops.top() == '/') || (ch == '+' || ch == '-'))) {
+        } else if (ch == '+' || ch == '-' || ch == 'x' || ch == ':') {
+            while (!ops.empty() && ((ops.top() == 'x' || ops.top() == ':') || (ch == '+' || ch == '-'))) {
                 double b = numbers.top(); numbers.pop();
                 double a = numbers.top(); numbers.pop();
                 char op = ops.top(); ops.pop();
                 if (op == '+') numbers.push(a + b);
                 else if (op == '-') numbers.push(a - b);
-                else if (op == '*') numbers.push(a * b);
-                else if (op == '/') numbers.push(a / b);
+                else if (op == 'x') numbers.push(a * b);
+                else if (op == ':') numbers.push(a / b);
             }
             ops.push(ch);
         }
@@ -38,8 +38,8 @@ double evaluate(const std::string& expr) {
         char op = ops.top(); ops.pop();
         if (op == '+') numbers.push(a + b);
         else if (op == '-') numbers.push(a - b);
-        else if (op == '*') numbers.push(a * b);
-        else if (op == '/') numbers.push(a / b);
+        else if (op == 'x') numbers.push(a * b);
+        else if (op == ':') numbers.push(a / b);
     }
     return numbers.top();
 }
@@ -74,12 +74,14 @@ int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
 
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_widget_set_name(window, "main-window");
     gtk_window_set_title(GTK_WINDOW(window), "Calculator");
     gtk_window_set_default_size(GTK_WINDOW(window), 400, 300);
 
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    gtk_widget_set_name(vbox, "main-vbox");
     gtk_container_add(GTK_CONTAINER(window), vbox);
 
     // Display area
@@ -100,11 +102,15 @@ int main(int argc, char *argv[]) {
     // CSS
     GtkCssProvider *provider = gtk_css_provider_new();
     const char *css =
+        "#main-window { border-radius: 0 0 15px 15px; }"
+        "#main-vbox { background-color: #ffffff; }"
         "#display-box { background-color: #f0f0f0; border-radius: 10px; padding: 10px; margin: 5px; }"
         "#expression-label { color: #888; font-size: 12px; }"
         "#result-label { color: #000; font-size: 24px; font-weight: bold; }"
-        "button { transition: all 0.2s ease; }"
-        "button:hover { background-color: #e0e0e0; transform: scale(1.05); }";
+        "button { background-color: #d0d0d0; border: none; border-radius: 10px; margin: 2px; }"
+        "button:hover { background-color: #c0c0c0; }"
+        "#equals-button { background-color: #007bff; color: white; }"
+        "#equals-button:hover { background-color: #0056b3; }";
     gtk_css_provider_load_from_data(provider, css, -1, NULL);
     gtk_style_context_add_provider_for_screen(gdk_screen_get_default(), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
     g_object_unref(provider);
@@ -115,8 +121,8 @@ int main(int argc, char *argv[]) {
     gtk_box_pack_start(GTK_BOX(vbox), grid, TRUE, TRUE, 0);
 
     const char *buttons[4][4] = {
-        {"7", "8", "9", "/"},
-        {"4", "5", "6", "*"},
+        {"7", "8", "9", ":"},
+        {"4", "5", "6", "x"},
         {"1", "2", "3", "-"},
         {"0", "C", "=", "+"}
     };
@@ -126,6 +132,10 @@ int main(int argc, char *argv[]) {
             GtkWidget *button = gtk_button_new_with_label(buttons[i][j]);
             gtk_widget_set_hexpand(button, TRUE);
             gtk_widget_set_vexpand(button, TRUE);
+            gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
+            if (strcmp(buttons[i][j], "=") == 0) {
+                gtk_widget_set_name(button, "equals-button");
+            }
             g_signal_connect(button, "clicked", G_CALLBACK(on_button_clicked), (gpointer)buttons[i][j]);
             gtk_grid_attach(GTK_GRID(grid), button, j, i, 1, 1);
         }
